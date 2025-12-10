@@ -24,4 +24,21 @@ public class SerlializeMethods {
         }
     }
 
+    public Object deserializeObject(Path filePath) throws IOException, ClassNotFoundException {
+        Objects.requireNonNull(filePath, "Path can't be null");
+
+        if (!Files.exists(filePath) || Files.isDirectory(filePath)) {
+            throw new java.nio.file.NoSuchFileException("Archivo de serialización no encontrado o es un directorio.");
+        }
+
+        try (FileInputStream fileIn = new FileInputStream(filePath.toFile());
+             ObjectInputStream in = new ObjectInputStream(fileIn)) {
+
+            Object obj = in.readObject();
+            System.out.println("Objeto deserializado exitosamente.");
+            return obj;
+
+        }
+    }
+
 }
