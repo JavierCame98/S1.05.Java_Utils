@@ -31,67 +31,38 @@ public class ListTreeDirectory {
         return true;
     }
 
-    public void listAlphabeticallyTheDirectory(Path listDirectory) throws IOException{
-        if(!Files.isDirectory(listDirectory)){
+    public void listAlphabeticallyTheDirectory(Path listDirectory) throws IOException {
+        if (!Files.isDirectory(listDirectory)) {
             throw new IllegalArgumentException("The File is not a directory");
         }
 
-        try(Stream<Path> stream = Files.list(listDirectory)){
+        try (Stream<Path> stream = Files.list(listDirectory)) {
             stream.sorted(Comparator.comparing(path -> path.getFileName().toString(), String.CASE_INSENSITIVE_ORDER))
                     .forEach(path -> System.out.println(path.getFileName()));
         }
     }
 
 
-    public void listTreeAlphabetically (Path directory) throws IOException {
-        walk(directory, 0, System.out);
+    public void listTreeAlphabetically(Path directory, Appendable out) throws IOException {
+        walk(directory, 0, out);
     }
 
-    private void walk (Path directory, int depth, Appendable out) throws IOException{
+    private void walk(Path directory, int depth, Appendable out) throws IOException {
 
-        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd-MM.yyyy HH:mm:ss")
-                .withZone(ZoneId.systemDefault());
+        out.append(DirectoryFormatter.formatDirectory(directory, depth));
 
-        String lastModified = dateFormatter.format(Instant.ofEpochMilli((Files.getLastModifiedTime(directory).toMillis())));
-
-        String dirName = directory.getFileName() == null ?
-                directory.toAbsolutePath().toString() : directory.getFileName().toString();
-
-        out.append(indentation(depth))
-                .append("[D] ")
-                .append(dirName)
-                .append(" last modified = " )
-                .append(lastModified);
-
-
-        try(Stream<Path> stream = Files.list(directory)){
-
-            List<Path> children = stream
-                    .sorted(Comparator.comparing(p-> p.getFileName().toString(),
-                            String.CASE_INSENSITIVE_ORDER))
-                    .toList();
-
-            for(Path c : children){
-                if(Files.isDirectory(c)){
-                    walk(c, depth +1, out);
-                } else{
-                    String fileLastModified = dateFormatter
-                            .format((Instant.ofEpochMilli(Files.getLastModifiedTime(c).toMillis())));
-
-                    out.append(indentation(depth +1))
-                            .append("[F] ")
-                            .append(c.getFileName().toString())
-                            .append(" last modified =")
-                            .append(fileLastModified);
+        try (Stream<Path> stream = Files.list(directory)) {
+            for (Path child : stream.sorted(Comparator.comparing(p -> p.getFileName().toString(),
+                    String.CASE_INSENSITIVE_ORDER)).toList()) {
+                if (Files.isDirectory(child)) {
+                    walk(child, depth + 1, out);
+                } else {
+                    out.append(DirectoryFormatter.formatFile(child, depth + 1));
                 }
             }
-        }
-    }
 
-    private String indentation (int depth){
-        char[] spaces = new char[depth +2];
-        Arrays.fill(spaces, ' ');
-        return new String(spaces);
+
+        }
     }
 
 }
